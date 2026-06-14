@@ -1,20 +1,55 @@
 import { Pause, Play, RotateCcw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { useT } from "../data/i18n.js";
+import axios from "axios";
+import { toast } from "react-hot-toast"; // או 'react-toastify' בהתאם למה שמותקן אצלך
 
 export default function Focus() {
-  const { language } = useApp();
+  const { language, user, token } = useApp();
   const t = useT(language);
   
-  // הסטייט הנוכחי של הזמן שנשאר (בשניות)
-  const [timeLeft, setTimeLeft] = useState(25 * 60);
-  // האם הטיימר פעיל כרגע
+  const [timeLeft, setTimeLeft] = useState(5);
   const [isRunning, setIsRunning] = useState(false);
-  // מצב הזמן שנבחר (ברירת מחדל 25 דקות)
   const [selectedMinutes, setSelectedMinutes] = useState(25);
+  
+  // Ref שמונע מהשמירה וההודעה לרוץ פעמיים באותו שבר שנייה
+  const isSavingRef = useRef(false);
 
-  // אפקט שמנהל את הספירה לאחור בכל שנייה
+  // פונקציה השומרת את סשן הלמידה בבסיס הנתונים
+  const saveStudySession = async () => {
+    if (isSavingRef.current) return; // אם כבר התחילה שמירה, אל תריץ שוב
+    isSavingRef.current = true;
+
+    try {
+      const authToken = token || user?.token || localStorage.getItem("token");
+
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/study-sessions`, 
+        {
+          duration: selectedMinutes,
+          date: new Date().toISOString(),
+        },
+        { 
+          headers: {
+            Authorization: authToken ? `Bearer ${authToken}` : ""
+          },
+          withCredentials: true 
+        }
+      );
+      
+      // הקפצת הודעה מעוצבת ומודרנית במקום alert!
+      toast.success(language === "he" ? "כל הכבוד! סשן הלמידה נשמר בהצלחה." : "Great job! Study session saved.");
+    } catch (error) {
+      console.error("Failed to save study session:", error);
+      toast.error(language === "he" ? "שגיאה בשמירת סשן הלמידה" : "Failed to save session");
+    } finally {
+      // מאפסים את ה-Ref רק אחרי שהכול נגמר
+      isSavingRef.current = false;
+    }
+  };
+
+  // אפקט שמנהל את ריצת הטיימר לאחור
   useEffect(() => {
     let interval = null;
 
@@ -22,34 +57,38 @@ export default function Focus() {
       interval = setInterval(() => {
         setTimeLeft((prevTime) => prevTime - 1);
       }, 1000);
-    } else if (timeLeft === 0) {
+    } else if (timeLeft === 0 && isRunning) {
+      // מוודאים שעוצרים את הריצה מיד ומנקים את ה-interval
       setIsRunning(false);
-      // כאן אפשר להוסיף צליל התראה בעתיד אם תרצה
-      alert("Time's up! Take a break.");
+      clearInterval(interval);
+      
+      // שמירת הסשן והקפצת הטוסט
+      saveStudySession();
     }
 
     return () => clearInterval(interval);
   }, [isRunning, timeLeft]);
 
-  // חישוב חכם של הדקות והשניות לתצוגה
+  // חישוב הדקות לתצוגה בשעון
   const displayMinutes = useMemo(() => {
     const mins = Math.floor(timeLeft / 60);
     return String(mins).padStart(2, "0");
   }, [timeLeft]);
 
+  // חישוב השניות לתצוגה בשעון
   const displaySeconds = useMemo(() => {
     const secs = timeLeft % 60;
     return String(secs).padStart(2, "0");
   }, [timeLeft]);
 
-  // פונקציה לשינוי מצב הזמן (25, 50, 90 דקות)
+  // החלפת מצבי זמן (25, 50, 90 דקות)
   const handleModeChange = (minutes) => {
     setSelectedMinutes(minutes);
     setTimeLeft(minutes * 60);
     setIsRunning(false);
   };
 
-  // פונקציה לאיפוס הטיימר לזמן המקורי שנבחר
+  // איפוס הטיימר לזמן המקורי שנבחר
   const handleReset = () => {
     setTimeLeft(selectedMinutes * 60);
     setIsRunning(false);
@@ -65,7 +104,7 @@ export default function Focus() {
             {displayMinutes}:{displaySeconds}
           </div>
           
-          {/* כפתורי בחירת הזמנים */}
+          {/* כפתורי בחירת דקות הלמידה */}
           <div className="mt-8 flex justify-center gap-2">
             {[25, 50, 90].map((value) => (
               <button 
@@ -78,7 +117,7 @@ export default function Focus() {
             ))}
           </div>
           
-          {/* כפתורי שליטה בטיימר */}
+          {/* כפתורי שליטה (Start / Pause / Reset) */}
           <div className="mt-6 flex justify-center gap-3">
             {!isRunning ? (
               <button className="btn-primary" onClick={() => setIsRunning(true)}>
