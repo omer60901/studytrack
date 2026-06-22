@@ -1,0 +1,128 @@
+import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+
+const RegisterPage = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setMessage('');
+
+    if (password !== confirmPassword) {
+      setMessage('Passwords do not match.');
+      return;
+    }
+    if (password.length < 8) {
+      setMessage('Password must be at least 8 characters.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/register', { name, email, password });
+      login(response.data.user, response.data.token);
+    } catch (err: any) {
+      const serverMessage = err?.response?.data?.message;
+      setMessage(serverMessage || 'Failed to register. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 px-6 py-12 text-slate-100">
+      <div className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute right-10 top-1/4 h-80 w-80 rounded-full bg-sky-500/10 blur-3xl" />
+
+      <div className="relative mx-auto grid w-full max-w-6xl gap-8 rounded-[2rem] border border-slate-800 bg-slate-900/90 p-8 shadow-2xl shadow-slate-950/30 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-6 rounded-[2rem] bg-gradient-to-br from-sky-700 to-violet-700 p-10 text-white shadow-inner shadow-slate-950/20">
+          <div>
+            <p className="text-sm uppercase tracking-[0.35em] text-slate-200">Create your account</p>
+            <h1 className="mt-4 text-4xl font-semibold">Build your study routine</h1>
+          </div>
+          <p className="text-slate-200/90">Register to save your tasks, calendar events, and planner recommendations across devices.</p>
+          <div className="space-y-4 rounded-3xl bg-white/10 p-6 text-sm text-slate-100">
+            <p className="font-semibold">What you get</p>
+            <ul className="space-y-2 pl-4 text-slate-200/90">
+              <li>• Manage study tasks in one place</li>
+              <li>• Track subject progress and deadlines</li>
+              <li>• Use personalized planner suggestions</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="card-soft">
+          <h2 className="text-3xl font-semibold text-white">Sign up</h2>
+          <p className="mt-3 text-sm text-slate-400">Create your account to start your study journey.</p>
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <label className="block text-sm text-slate-300">
+              Name
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="input-field"
+              />
+            </label>
+            <label className="block text-sm text-slate-300">
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="input-field"
+              />
+            </label>
+            <label className="block text-sm text-slate-300">
+              Password
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                required
+                className="input-field"
+              />
+            </label>
+            <label className="block text-sm text-slate-300">
+              Confirm password
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={8}
+                required
+                className="input-field"
+              />
+            </label>
+
+            {message && <p className="text-sm text-rose-400">{message}</p>}
+
+            <button className="button-primary w-full justify-center" disabled={loading}>
+              {loading ? 'Creating account...' : 'Register'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-400">
+            Already registered?{' '}
+            <Link to="/login" className="font-semibold text-white hover:text-purple-200">
+              Login
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RegisterPage;

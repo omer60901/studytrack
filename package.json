@@ -1,0 +1,21 @@
+{
+  "name": "studytrack",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "start:client": "npm --prefix client run dev",
+    "start:server": "npm --prefix server run dev",
+    "dev": "cross-env SERVER_PORT=5000 concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "test:e2e": "npx playwright test --config=e2e/playwright.config.ts",
+    "lhci": "lhci autorun --config=./.lighthouserc.json || true",
+    "lint": "npm --prefix client run lint && npm --prefix server run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
+  }
+}

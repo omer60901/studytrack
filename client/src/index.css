@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg-primary: #020617;
+  --bg-secondary: #0f172a;
+  --bg-card: rgba(15, 23, 42, 0.9);
+  --bg-card-alt: rgba(2, 6, 23, 0.9);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --accent: #7c3aed;
+}
+
+html.light {
+  color-scheme: light;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-card-alt: rgba(241, 245, 249, 0.9);
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #cbd5e1;
+  --accent: #7c3aed;
+}
+
+html.light body {
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.08), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.06), transparent 30%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #1e293b;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #020617;
+  background-image:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.24), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.18), transparent 30%),
+    linear-gradient(180deg, #020617 0%, #090e23 100%);
+  background-attachment: fixed;
+  color: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(124, 58, 237, 0.85);
+  color: white;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+@layer utilities {
+  .card {
+    @apply rounded-[2rem] bg-slate-900/90 p-8 shadow-[0_25px_80px_-28px_rgba(15,23,42,0.8)] backdrop-blur;
+  }
+  .card-soft {
+    @apply rounded-[2rem] bg-slate-950/90 p-8 shadow-[0_25px_80px_-28px_rgba(15,23,42,0.8)];
+  }
+  .input-field {
+    @apply mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition duration-200 focus:border-purple-500;
+  }
+  .button-primary {
+    @apply inline-flex items-center justify-center rounded-3xl bg-gradient-to-r from-purple-600 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 transition duration-200 hover:opacity-95;
+  }
+  .accent-chip {
+    @apply inline-flex items-center rounded-full bg-slate-800 px-3 py-2 text-xs uppercase tracking-[0.22em] text-slate-300;
+  }
+}
+
+html.light .card {
+  @apply bg-white/90 shadow-[0_25px_80px_-28px_rgba(0,0,0,0.08)];
+}
+html.light .card-soft {
+  @apply bg-slate-50/90 shadow-[0_25px_80px_-28px_rgba(0,0,0,0.06)];
+}
+html.light .input-field {
+  @apply border-slate-300 bg-white text-slate-900;
+}
+html.light .accent-chip {
+  @apply bg-slate-200 text-slate-600;
+}
+html.light .text-white {
+  color: #1e293b;
+}
+html.light .text-slate-400 {
+  color: #64748b;
+}
+html.light .text-slate-300 {
+  color: #475569;
+}
+html.light .bg-slate-950 {
+  background-color: #f8fafc;
+}
+html.light .bg-slate-900\/90 {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+html.light .bg-slate-800 {
+  background-color: #e2e8f0;
+}
+html.light .bg-slate-800\/80 {
+  background-color: rgba(226, 232, 240, 0.8);
+}
+html.light .bg-slate-900 {
+  background-color: #f1f5f9;
+}
+html.light .hover\:bg-slate-700:hover {
+  background-color: #cbd5e1;
+}
+html.light .border-slate-700 {
+  border-color: #cbd5e1;
+}
