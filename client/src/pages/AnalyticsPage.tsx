@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Spinner from '../components/Spinner';
+import { useLanguage } from '../context/LanguageContext';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 interface Summary { totalTasks: number; completedTasks: number; completionRate: number; subjects: number; }
@@ -10,6 +11,7 @@ interface SessionStats { totalMinutes: number; totalPomodoros: number; totalSess
 const COLORS = ['#7c3aed', '#2563eb', '#059669', '#d97706', '#dc2626', '#8b5cf6', '#0891b2'];
 
 const AnalyticsPage = () => {
+  const { t } = useLanguage();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [streak, setStreak] = useState<Streak | null>(null);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -55,41 +57,41 @@ const AnalyticsPage = () => {
   return (
     <div className="space-y-6">
       <section className="card">
-        <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Analytics</p>
-        <h2 className="mt-3 text-3xl font-semibold text-white">Your study performance</h2>
-        <p className="mt-3 max-w-2xl text-slate-400">See how your progress is trending and where to focus next.</p>
+        <p className="text-sm uppercase tracking-[0.25em] text-slate-400">{t('analyticsTitle')}</p>
+        <h2 className="mt-3 text-3xl font-semibold text-white">{t('studyPerformance')}</h2>
+        <p className="mt-3 max-w-2xl text-slate-400">{t('analyticsDesc')}</p>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-4">
         <div className="card-soft">
-          <p className="text-sm uppercase tracking-wider text-slate-400">Total tasks</p>
+          <p className="text-sm uppercase tracking-wider text-slate-400">{t('totalTasks')}</p>
           <p className="mt-3 text-4xl font-semibold text-white">{summary?.totalTasks ?? 0}</p>
         </div>
         <div className="card-soft">
-          <p className="text-sm uppercase tracking-wider text-slate-400">Completion</p>
+          <p className="text-sm uppercase tracking-wider text-slate-400">{t('completion')}</p>
           <p className="mt-3 text-4xl font-semibold text-white">{summary ? `${summary.completionRate}%` : '0%'}</p>
         </div>
         <div className="card-soft">
-          <p className="text-sm uppercase tracking-wider text-slate-400">Study sessions</p>
+          <p className="text-sm uppercase tracking-wider text-slate-400">{t('studySessions')}</p>
           <p className="mt-3 text-4xl font-semibold text-white">{sessionStats?.totalSessions ?? 0}</p>
         </div>
         <div className="card-soft">
-          <p className="text-sm uppercase tracking-wider text-slate-400">Pomodoros</p>
+          <p className="text-sm uppercase tracking-wider text-slate-400">{t('pomodoros')}</p>
           <p className="mt-3 text-4xl font-semibold text-white">{sessionStats?.totalPomodoros ?? 0}</p>
         </div>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="card">
-          <h3 className="text-lg font-semibold text-white mb-4">Study streak</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('studyStreak')}</h3>
           <div className="rounded-2xl bg-slate-950 p-6">
-            <p className="text-4xl font-bold text-white">{streak?.streak ?? 0} days</p>
-            <p className="text-sm text-slate-400 mt-1">Longest: {streak?.longestStreak ?? 0} days</p>
-            <p className="text-sm text-slate-400">Goal today: {streak?.goalToday ?? 0} min</p>
+            <p className="text-4xl font-bold text-white">{streak?.streak ?? 0} {t('days')}</p>
+            <p className="text-sm text-slate-400 mt-1">{t('longest')}: {streak?.longestStreak ?? 0} {t('days')}</p>
+            <p className="text-sm text-slate-400">{t('goalToday')}: {streak?.goalToday ?? 0} {t('min')}</p>
           </div>
         </div>
         <div className="card">
-          <h3 className="text-lg font-semibold text-white mb-4">Weekly study time</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('weeklyStudyTime')}</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={last7Days}>
               <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 12 }} />
@@ -105,7 +107,7 @@ const AnalyticsPage = () => {
 
       {subjectData.length > 0 && (
         <div className="card">
-          <h3 className="text-lg font-semibold text-white mb-4">Time by subject</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('timeBySubject')}</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={subjectData} layout="vertical">
               <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 12 }} />

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Achievement from '../models/Achievement';
 import Task from '../models/Task';
 import StudySession from '../models/StudySession';
+import User from '../models/User';
 
 const BADGES = [
   { id: 'first_task', name: 'First Step', description: 'Completed your first task', icon: '🎯' },
@@ -17,6 +18,25 @@ const BADGES = [
   { id: 'pomodoro_10', name: 'Focused', description: 'Completed 10 pomodoro sessions', icon: '🍅' },
   { id: 'subjects_3', name: 'Well Rounded', description: 'Studied 3+ different subjects', icon: '🎓' },
 ];
+
+const XP_REWARDS = {
+  taskCompleted: 10,
+  pomodoroCompleted: 5,
+  badgeEarned: 25,
+};
+
+async function awardXp(userId: mongoose.Types.ObjectId, amount: number): Promise<{ xp: number; level: number; leveledUp: boolean }> {
+  const user = await User.findById(userId);
+  if (!user) return { xp: 0, level: 1, leveledUp: false };
+
+  const oldLevel = user.level ?? 1;
+  user.xp = (user.xp ?? 0) + amount;
+  user.level = Math.floor(user.xp / 100) + 1;
+  const leveledUp = user.level > oldLevel;
+  await user.save();
+
+  return { xp: user.xp, level: user.level, leveledUp };
+}
 
 export async function checkAndAwardBadges(userId: mongoose.Types.ObjectId) {
   const newBadges: typeof BADGES = [];
@@ -87,4 +107,16 @@ export async function checkAndAwardBadges(userId: mongoose.Types.ObjectId) {
   }
 
   return newBadges;
+}
+
+export async function awardTaskCompletedXp(userId: mongoose.Types.ObjectId) {
+  return awardXp(userId, XP_REWARDS.taskCompleted);
+}
+
+export async function awardPomodoroCompletedXp(userId: mongoose.Types.ObjectId) {
+  return awardXp(userId, XP_REWARDS.pomodoroCompleted);
+}
+
+export async function awardBadgeXp(userId: mongoose.Types.ObjectId) {
+  return awardXp(userId, XP_REWARDS.badgeEarned);
 }

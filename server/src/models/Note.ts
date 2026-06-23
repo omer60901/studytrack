@@ -5,7 +5,8 @@ const noteSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
     content: { type: String, required: true },
-    subject: { type: String, default: '' }
+    subject: { type: String, default: '' },
+    subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null }
   },
   { timestamps: true }
 );

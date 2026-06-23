@@ -8,6 +8,7 @@ const taskSchema = new mongoose.Schema(
     dueDate: { type: Date },
     priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
     category: { type: String, default: 'General' },
+    subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null },
     tags: [{ type: String }],
     dependsOn: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }],
     completed: { type: Boolean, default: false }

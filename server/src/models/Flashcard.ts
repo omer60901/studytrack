@@ -6,8 +6,13 @@ const flashcardSchema = new mongoose.Schema(
     front: { type: String, required: true },
     back: { type: String, required: true },
     subject: { type: String, default: '' },
+    subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null },
     difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
-    lastReviewed: { type: Date }
+    lastReviewed: { type: Date },
+    easeFactor: { type: Number, default: 2.5 },
+    interval: { type: Number, default: 0 },
+    repetitions: { type: Number, default: 0 },
+    nextReview: { type: Date }
   },
   { timestamps: true }
 );

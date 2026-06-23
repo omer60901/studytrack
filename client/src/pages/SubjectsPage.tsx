@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface Subject {
   _id: string;
@@ -15,7 +16,9 @@ const COLORS = ['#7c3aed', '#2563eb', '#059669', '#d97706', '#dc2626', '#8b5cf6'
 const ICONS = ['📘', '📕', '📗', '📙', '📓', '📔', '📒', '🎨', '🔬', '🧮', '🌍', '💻', '🎵', '⚗️', '📐'];
 
 const SubjectsPage = () => {
+  const { t } = useLanguage();
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjectCounts, setSubjectCounts] = useState<Record<string, { tasks: number; notes: number; flashcards: number }>>({});
   const [title, setTitle] = useState('');
   const [progress, setProgress] = useState(50);
   const [gradeAverage, setGradeAverage] = useState(85);
@@ -37,21 +40,36 @@ const SubjectsPage = () => {
     try {
       const response = await api.get('/subjects');
       setSubjects(response.data);
+
+      const counts: Record<string, { tasks: number; notes: number; flashcards: number }> = {};
+      for (const subject of response.data) {
+        const [tasksRes, notesRes, flashcardsRes] = await Promise.all([
+          api.get(`/tasks?subject=${subject._id}`).catch(() => ({ data: { total: 0 } })),
+          api.get(`/notes?subjectId=${subject._id}`).catch(() => ({ data: [] })),
+          api.get(`/flashcards?subjectId=${subject._id}`).catch(() => ({ data: [] })),
+        ]);
+        counts[subject._id] = {
+          tasks: tasksRes.data.total || 0,
+          notes: Array.isArray(notesRes.data) ? notesRes.data.length : 0,
+          flashcards: Array.isArray(flashcardsRes.data) ? flashcardsRes.data.length : 0,
+        };
+      }
+      setSubjectCounts(counts);
     } catch {
-      toast.show('Failed to load subjects.', 'error');
+      toast.show(t('subjectFailedLoad'), 'error');
     }
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!title) { toast.show('Subject title is required.', 'error'); return; }
+    if (!title) { toast.show(t('subjectRequired'), 'error'); return; }
     try {
       const response = await api.post('/subjects', { title, progress, gradeAverage, color, icon });
       setSubjects((current) => [response.data, ...current]);
       setTitle(''); setProgress(50); setGradeAverage(85);
-      toast.show('Subject added!', 'success');
+      toast.show(t('subjectAdded'), 'success');
     } catch {
-      toast.show('Failed to add subject.', 'error');
+      toast.show(t('subjectFailedAdd'), 'error');
     }
   };
 
@@ -74,51 +92,51 @@ const SubjectsPage = () => {
       });
       setSubjects((current) => current.map((s) => (s._id === id ? response.data : s)));
       setEditingId(null);
-      toast.show('Subject updated!', 'success');
+      toast.show(t('subjectUpdated'), 'success');
     } catch {
-      toast.show('Failed to update subject.', 'error');
+      toast.show(t('subjectFailedUpdate'), 'error');
     }
   };
 
   const deleteSubject = async (id: string) => {
-    if (!confirm('Delete this subject?')) return;
+    if (!confirm(t('deleteSubjectConfirm'))) return;
     try {
       await api.delete(`/subjects/${id}`);
       setSubjects((current) => current.filter((s) => s._id !== id));
-      toast.show('Subject deleted.', 'success');
+      toast.show(t('subjectDeleted'), 'success');
     } catch {
-      toast.show('Failed to delete subject.', 'error');
+      toast.show(t('subjectFailedDelete'), 'error');
     }
   };
 
   return (
     <div className="space-y-6">
       <section className="card">
-        <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Subjects</p>
-        <h2 className="mt-3 text-3xl font-semibold text-white">Track your class progress</h2>
-        <p className="mt-3 max-w-2xl text-slate-400">Monitor your subjects, grades, and learning progress in real time.</p>
+        <p className="text-sm uppercase tracking-[0.25em] text-slate-400">{t('subjectsTitle')}</p>
+        <h2 className="mt-3 text-3xl font-semibold text-white">{t('trackClassProgress')}</h2>
+        <p className="mt-3 max-w-2xl text-slate-400">{t('subjectsDesc')}</p>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="card">
-          <h3 className="text-lg font-semibold text-white">Add a subject</h3>
+          <h3 className="text-lg font-semibold text-white">{t('addSubject')}</h3>
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <label className="block text-sm text-slate-300">
-              Subject name
+              {t('subjectName')}
               <input value={title} onChange={(e) => setTitle(e.target.value)} required className="input-field" />
             </label>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm text-slate-300">
-                Progress (%)
+                {t('progressPercent')}
                 <input type="number" min={0} max={100} value={progress} onChange={(e) => setProgress(Number(e.target.value))} className="input-field" />
               </label>
               <label className="block text-sm text-slate-300">
-                Grade average
+                {t('gradeAverage')}
                 <input type="number" min={0} max={100} value={gradeAverage} onChange={(e) => setGradeAverage(Number(e.target.value))} className="input-field" />
               </label>
             </div>
             <div>
-              <p className="text-sm text-slate-300 mb-2">Color</p>
+              <p className="text-sm text-slate-300 mb-2">{t('color')}</p>
               <div className="flex flex-wrap gap-2">
                 {COLORS.map((c) => (
                   <button key={c} type="button" onClick={() => setColor(c)}
@@ -128,7 +146,7 @@ const SubjectsPage = () => {
               </div>
             </div>
             <div>
-              <p className="text-sm text-slate-300 mb-2">Icon</p>
+              <p className="text-sm text-slate-300 mb-2">{t('icon')}</p>
               <div className="flex flex-wrap gap-2">
                 {ICONS.map((i) => (
                   <button key={i} type="button" onClick={() => setIcon(i)}
@@ -138,7 +156,7 @@ const SubjectsPage = () => {
                 ))}
               </div>
             </div>
-            <button className="button-primary w-full justify-center">Add subject</button>
+            <button className="button-primary w-full justify-center">{t('addSubject')}</button>
           </form>
         </div>
 
@@ -148,8 +166,8 @@ const SubjectsPage = () => {
               {editingId === subject._id ? (
                 <div className="space-y-3">
                   <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="input-field" />
-                  <input type="number" min={0} max={100} value={editProgress} onChange={(e) => setEditProgress(Number(e.target.value))} className="input-field" placeholder="Progress %" />
-                  <input type="number" min={0} max={100} value={editGradeAverage} onChange={(e) => setEditGradeAverage(Number(e.target.value))} className="input-field" placeholder="Grade average" />
+                  <input type="number" min={0} max={100} value={editProgress} onChange={(e) => setEditProgress(Number(e.target.value))} className="input-field" placeholder={t('progressPercent')} />
+                  <input type="number" min={0} max={100} value={editGradeAverage} onChange={(e) => setEditGradeAverage(Number(e.target.value))} className="input-field" placeholder={t('gradeAverage')} />
                   <div className="flex flex-wrap gap-2">
                     {COLORS.map((c) => (
                       <button key={c} type="button" onClick={() => setEditColor(c)}
@@ -158,8 +176,8 @@ const SubjectsPage = () => {
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => saveEdit(subject._id)} className="button-primary flex-1 justify-center">Save</button>
-                    <button onClick={cancelEdit} className="rounded-2xl bg-slate-800 px-4 py-2 text-sm text-slate-300">Cancel</button>
+                    <button onClick={() => saveEdit(subject._id)} className="button-primary flex-1 justify-center">{t('save')}</button>
+                    <button onClick={cancelEdit} className="rounded-2xl bg-slate-800 px-4 py-2 text-sm text-slate-300">{t('cancel')}</button>
                   </div>
                 </div>
               ) : (
@@ -167,7 +185,7 @@ const SubjectsPage = () => {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <h3 className="text-xl font-semibold text-white">{subject.icon} {subject.title}</h3>
-                      <p className="text-sm text-slate-400">Grade average</p>
+                      <p className="text-sm text-slate-400">{t('gradeAverage')}</p>
                     </div>
                     <span className="rounded-full px-3 py-2 text-xs uppercase tracking-wider text-white" style={{ backgroundColor: subject.color || '#7c3aed' }}>
                       {subject.gradeAverage}%
@@ -175,21 +193,34 @@ const SubjectsPage = () => {
                   </div>
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm text-slate-400">
-                      <span>Completion</span><span>{subject.progress}%</span>
+                      <span>{t('completion')}</span><span>{subject.progress}%</span>
                     </div>
                     <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-800">
                       <div className="h-full rounded-full" style={{ width: `${subject.progress}%`, backgroundColor: subject.color || '#7c3aed' }} />
                     </div>
                   </div>
+                  {subjectCounts[subject._id] && (
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
+                      {subjectCounts[subject._id].tasks > 0 && (
+                        <span className="rounded-full bg-slate-800 px-2 py-1">{t('tasksCount', { count: subjectCounts[subject._id].tasks })}</span>
+                      )}
+                      {subjectCounts[subject._id].notes > 0 && (
+                        <span className="rounded-full bg-slate-800 px-2 py-1">{t('notesCount', { count: subjectCounts[subject._id].notes })}</span>
+                      )}
+                      {subjectCounts[subject._id].flashcards > 0 && (
+                        <span className="rounded-full bg-slate-800 px-2 py-1">{t('flashcardsCount', { count: subjectCounts[subject._id].flashcards })}</span>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-4 flex gap-2">
-                    <button onClick={() => startEdit(subject)} className="rounded-2xl bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700">Edit</button>
-                    <button onClick={() => deleteSubject(subject._id)} className="rounded-2xl bg-rose-500 px-4 py-2 text-sm text-white hover:bg-rose-400">Delete</button>
+                    <button onClick={() => startEdit(subject)} className="rounded-2xl bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700">{t('edit')}</button>
+                    <button onClick={() => deleteSubject(subject._id)} className="rounded-2xl bg-rose-500 px-4 py-2 text-sm text-white hover:bg-rose-400">{t('delete')}</button>
                   </div>
                 </>
               )}
             </div>
           ))}
-          {subjects.length === 0 && <p className="rounded-[2rem] bg-slate-950 p-6 text-slate-400 col-span-2">No subjects yet.</p>}
+          {subjects.length === 0 && <p className="rounded-[2rem] bg-slate-950 p-6 text-slate-400 col-span-2">{t('noSubjectsYet')}</p>}
         </div>
       </section>
     </div>

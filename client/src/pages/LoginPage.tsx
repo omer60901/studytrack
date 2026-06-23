@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useLanguage();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -19,7 +21,7 @@ const LoginPage = () => {
       login(response.data.user, response.data.token);
     } catch (err: any) {
       const serverMessage = err?.response?.data?.message;
-      setError(serverMessage || 'Login failed. Please check your credentials.');
+      setError(serverMessage || t('loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -33,27 +35,27 @@ const LoginPage = () => {
       <div className="relative mx-auto grid w-full max-w-6xl gap-8 rounded-[2rem] border border-slate-800 bg-slate-900/90 p-8 shadow-2xl shadow-slate-950/30 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6 rounded-[2rem] bg-gradient-to-br from-purple-700 to-sky-700 p-10 text-white shadow-inner shadow-slate-950/20">
           <div>
-            <p className="text-sm uppercase tracking-[0.35em] text-slate-200">Welcome back</p>
-            <h1 className="mt-4 text-4xl font-semibold">Finish strong with StudyTrack</h1>
+            <p className="text-sm uppercase tracking-[0.35em] text-slate-200">{t('welcomeBack')}</p>
+            <h1 className="mt-4 text-4xl font-semibold">{t('finishStrong')}</h1>
           </div>
-          <p className="text-slate-200/90">Access tasks, goals, calendar planning and performance analytics in one place.</p>
+          <p className="text-slate-200/90">{t('loginDesc')}</p>
           <div className="space-y-4 rounded-3xl bg-white/10 p-6 text-sm text-slate-100">
-            <p className="font-semibold">Why StudyTrack?</p>
+            <p className="font-semibold">{t('whyStudyTrack')}</p>
             <ul className="space-y-2 pl-4 text-slate-200/90">
-              <li>• See key goals every day</li>
-              <li>• Track tasks and deadlines</li>
-              <li>• Plan study sessions with clarity</li>
+              <li>• {t('seeGoals')}</li>
+              <li>• {t('trackDeadlines')}</li>
+              <li>• {t('planSessions')}</li>
             </ul>
           </div>
         </div>
 
         <div className="card-soft">
-          <h2 className="text-3xl font-semibold text-white">Sign in</h2>
-          <p className="mt-3 text-sm text-slate-400">Enter your email and password to continue.</p>
+          <h2 className="text-3xl font-semibold text-white">{t('signIn')}</h2>
+          <p className="mt-3 text-sm text-slate-400">{t('signInDesc')}</p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <label className="block text-sm text-slate-300">
-              Email
+              {t('email')}
               <input
                 type="email"
                 value={email}
@@ -63,7 +65,7 @@ const LoginPage = () => {
               />
             </label>
             <label className="block text-sm text-slate-300">
-              Password
+              {t('password')}
               <input
                 type="password"
                 value={password}
@@ -76,14 +78,14 @@ const LoginPage = () => {
             {error && <p className="text-sm text-rose-400">{error}</p>}
 
             <button className="button-primary w-full justify-center" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('signingIn') : t('signInBtn')}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-400">
-            Don’t have an account?{' '}
+            {t('noAccount')}{' '}
             <Link to="/register" className="font-semibold text-white hover:text-purple-200">
-              Create one
+              {t('createOne')}
             </Link>
           </p>
         </div>

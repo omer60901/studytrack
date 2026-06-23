@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import Task from '../models/Task';
-import { checkAndAwardBadges } from '../utils/achievements';
+import { checkAndAwardBadges, awardTaskCompletedXp } from '../utils/achievements';
 
 export const getTasks = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -25,6 +25,9 @@ export const getTasks = async (req: Request, res: Response, next: NextFunction) 
     if (req.query.tag) {
       filter.tags = { $in: [req.query.tag] };
     }
+    if (req.query.subject) {
+      filter.subject = req.query.subject;
+    }
     if (req.query.sort) {
       const sortField = req.query.sort as string;
       const sortOrder = req.query.order === 'desc' ? -1 : 1;
@@ -32,7 +35,7 @@ export const getTasks = async (req: Request, res: Response, next: NextFunction) 
     }
 
     const [tasks, total] = await Promise.all([
-      Task.find(filter).sort(sortObj).skip(skip).limit(limit),
+      Task.find(filter).sort(sortObj).skip(skip).limit(limit).populate('subject', 'name color'),
       Task.countDocuments(filter)
     ]);
 
@@ -50,7 +53,7 @@ export const getTasks = async (req: Request, res: Response, next: NextFunction) 
 export const getTaskById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-    const task = await Task.findOne({ _id: req.params.id, user: userId });
+    const task = await Task.findOne({ _id: req.params.id, user: userId }).populate('subject', 'name color');
     if (!task) return res.status(404).json({ message: 'Task not found' });
     res.json(task);
   } catch (error) {
@@ -71,8 +74,8 @@ export const createTask = async (req: Request, res: Response, next: NextFunction
 export const updateTask = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-    const { title, description, dueDate, priority, category, tags, dependsOn, completed } = req.body;
-    const updates = { title, description, dueDate, priority, category, tags, dependsOn, completed };
+    const { title, description, dueDate, priority, category, tags, dependsOn, completed, subject } = req.body;
+    const updates = { title, description, dueDate, priority, category, tags, dependsOn, completed, subject };
     Object.keys(updates).forEach((key) => {
       if (updates[key as keyof typeof updates] === undefined) {
         delete updates[key as keyof typeof updates];
@@ -87,9 +90,11 @@ export const updateTask = async (req: Request, res: Response, next: NextFunction
 
     if (completed === true) {
       const newBadges = await checkAndAwardBadges(new mongoose.Types.ObjectId(userId));
-      if (newBadges.length > 0) {
-        return res.json({ ...task.toObject(), newBadges });
+      const xpResult = await awardTaskCompletedXp(new mongoose.Types.ObjectId(userId));
+      if (newBadges.length > 0 || xpResult.leveledUp) {
+        return res.json({ ...task.toObject(), newBadges, xp: xpResult.xp, level: xpResult.level, leveledUp: xpResult.leveledUp });
       }
+      return res.json({ ...task.toObject(), xp: xpResult.xp, level: xpResult.level, leveledUp: xpResult.leveledUp });
     }
 
     res.json(task);

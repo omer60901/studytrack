@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import StudySession from '../models/StudySession';
+import { awardPomodoroCompletedXp } from '../utils/achievements';
 
 export const getSessions = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -28,6 +30,12 @@ export const createSession = async (req: Request, res: Response, next: NextFunct
       completedAt: new Date()
     });
     res.status(201).json(session);
+
+    if (pomodoros && pomodoros > 0) {
+      try {
+        await awardPomodoroCompletedXp(new mongoose.Types.ObjectId(userId));
+      } catch { /* silent */ }
+    }
   } catch (error) {
     next(error);
   }

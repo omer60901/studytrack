@@ -9,6 +9,7 @@ import PlannerPage from './pages/PlannerPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import NotesPage from './pages/NotesPage';
 import SettingsPage from './pages/SettingsPage';
+import SessionsPage from './pages/SessionsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MainLayout from './layouts/MainLayout';
@@ -30,6 +31,7 @@ function App() {
             <Route path="planner" element={<PlannerPage />} />
             <Route path="flashcards" element={<FlashcardsPage />} />
             <Route path="notes" element={<NotesPage />} />
+            <Route path="sessions" element={<SessionsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>

@@ -68,7 +68,23 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const profile = async (req: Request, res: Response) => {
   const user = req.user!;
-  res.json({ user });
+  const fullUser = await User.findById(user.id).select('-password');
+  if (!fullUser) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  res.json({
+    user: {
+      id: fullUser.id,
+      name: fullUser.name,
+      email: fullUser.email,
+      level: fullUser.level,
+      xp: fullUser.xp,
+      streak: fullUser.streak,
+      longestStreak: fullUser.longestStreak,
+      studyGoal: fullUser.studyGoal,
+      emailNotifications: fullUser.emailNotifications
+    }
+  });
 };
 
 export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {

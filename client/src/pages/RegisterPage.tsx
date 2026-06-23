@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -11,17 +12,18 @@ const RegisterPage = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useLanguage();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setMessage('');
 
     if (password !== confirmPassword) {
-      setMessage('Passwords do not match.');
+      setMessage(t('passwordsNoMatch'));
       return;
     }
     if (password.length < 8) {
-      setMessage('Password must be at least 8 characters.');
+      setMessage(t('passwordTooShort'));
       return;
     }
 
@@ -31,7 +33,7 @@ const RegisterPage = () => {
       login(response.data.user, response.data.token);
     } catch (err: any) {
       const serverMessage = err?.response?.data?.message;
-      setMessage(serverMessage || 'Failed to register. Please try again.');
+      setMessage(serverMessage || t('registerFailed'));
     } finally {
       setLoading(false);
     }
@@ -45,27 +47,27 @@ const RegisterPage = () => {
       <div className="relative mx-auto grid w-full max-w-6xl gap-8 rounded-[2rem] border border-slate-800 bg-slate-900/90 p-8 shadow-2xl shadow-slate-950/30 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6 rounded-[2rem] bg-gradient-to-br from-sky-700 to-violet-700 p-10 text-white shadow-inner shadow-slate-950/20">
           <div>
-            <p className="text-sm uppercase tracking-[0.35em] text-slate-200">Create your account</p>
-            <h1 className="mt-4 text-4xl font-semibold">Build your study routine</h1>
+            <p className="text-sm uppercase tracking-[0.35em] text-slate-200">{t('createAccount')}</p>
+            <h1 className="mt-4 text-4xl font-semibold">{t('buildRoutine')}</h1>
           </div>
-          <p className="text-slate-200/90">Register to save your tasks, calendar events, and planner recommendations across devices.</p>
+          <p className="text-slate-200/90">{t('registerDesc')}</p>
           <div className="space-y-4 rounded-3xl bg-white/10 p-6 text-sm text-slate-100">
-            <p className="font-semibold">What you get</p>
+            <p className="font-semibold">{t('whatYouGet')}</p>
             <ul className="space-y-2 pl-4 text-slate-200/90">
-              <li>• Manage study tasks in one place</li>
-              <li>• Track subject progress and deadlines</li>
-              <li>• Use personalized planner suggestions</li>
+              <li>• {t('manageTasks')}</li>
+              <li>• {t('trackProgress')}</li>
+              <li>• {t('usePlanner')}</li>
             </ul>
           </div>
         </div>
 
         <div className="card-soft">
-          <h2 className="text-3xl font-semibold text-white">Sign up</h2>
-          <p className="mt-3 text-sm text-slate-400">Create your account to start your study journey.</p>
+          <h2 className="text-3xl font-semibold text-white">{t('signUp')}</h2>
+          <p className="mt-3 text-sm text-slate-400">{t('signUpDesc')}</p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <label className="block text-sm text-slate-300">
-              Name
+              {t('name')}
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -74,7 +76,7 @@ const RegisterPage = () => {
               />
             </label>
             <label className="block text-sm text-slate-300">
-              Email
+              {t('email')}
               <input
                 type="email"
                 value={email}
@@ -84,7 +86,7 @@ const RegisterPage = () => {
               />
             </label>
             <label className="block text-sm text-slate-300">
-              Password
+              {t('password')}
               <input
                 type="password"
                 value={password}
@@ -95,7 +97,7 @@ const RegisterPage = () => {
               />
             </label>
             <label className="block text-sm text-slate-300">
-              Confirm password
+              {t('confirmPassword')}
               <input
                 type="password"
                 value={confirmPassword}
@@ -109,14 +111,14 @@ const RegisterPage = () => {
             {message && <p className="text-sm text-rose-400">{message}</p>}
 
             <button className="button-primary w-full justify-center" disabled={loading}>
-              {loading ? 'Creating account...' : 'Register'}
+              {loading ? t('creatingAccount') : t('registerBtn')}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-400">
-            Already registered?{' '}
+            {t('alreadyRegistered')}{' '}
             <Link to="/login" className="font-semibold text-white hover:text-purple-200">
-              Login
+              {t('loginLink')}
             </Link>
           </p>
         </div>
