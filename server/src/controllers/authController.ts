@@ -1,8 +1,15 @@
-/// <reference path="../types/express.d.ts" />
 import type { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/User';
+import Task from '../models/Task';
+import Subject from '../models/Subject';
+import Event from '../models/Event';
+import Note from '../models/Note';
+import Flashcard from '../models/Flashcard';
+import StudySession from '../models/StudySession';
+import Achievement from '../models/Achievement';
 import { signToken } from '../utils/jwt';
+import { checkIsAdmin } from '../middleware/admin';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -39,7 +46,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     const user = await User.create({ name: name.trim(), email: normalizedEmail, password: hashedPassword });
     const token = signToken(user.id);
 
-    res.status(201).json({ user: { id: user.id, name: user.name, email: user.email }, token });
+    res.status(201).json({ user: { id: user.id, name: user.name, email: user.email, isAdmin: checkIsAdmin(user.name) }, token });
   } catch (error) {
     next(error);
   }
@@ -60,7 +67,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     const token = signToken(user.id);
-    res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+    res.json({ user: { id: user.id, name: user.name, email: user.email, isAdmin: checkIsAdmin(user.name) }, token });
   } catch (error) {
     next(error);
   }
@@ -82,7 +89,8 @@ export const profile = async (req: Request, res: Response) => {
       streak: fullUser.streak,
       longestStreak: fullUser.longestStreak,
       studyGoal: fullUser.studyGoal,
-      emailNotifications: fullUser.emailNotifications
+      emailNotifications: fullUser.emailNotifications,
+      isAdmin: checkIsAdmin(fullUser.name)
     }
   });
 };
@@ -90,7 +98,7 @@ export const profile = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-    const { name, studyGoal, emailNotifications } = req.body;
+    const { name, studyGoal, emailNotifications, reminderPreferences } = req.body;
 
     const updates: Record<string, unknown> = {};
     if (typeof name === 'string' && name.trim().length >= 2) {
@@ -102,13 +110,28 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     if (typeof emailNotifications === 'boolean') {
       updates.emailNotifications = emailNotifications;
     }
+    if (reminderPreferences && typeof reminderPreferences === 'object') {
+      updates.reminderPreferences = {
+        studyReminder: reminderPreferences.studyReminder ?? true,
+        deadlineReminder: reminderPreferences.deadlineReminder ?? true,
+        reviewReminder: reminderPreferences.reviewReminder ?? true,
+        reminderTime: reminderPreferences.reminderTime || '09:00'
+      };
+    }
 
     const user = await User.findByIdAndUpdate(userId, updates, { returnDocument: 'after' }).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ user: { id: user.id, name: user.name, email: user.email, studyGoal: user.studyGoal, emailNotifications: user.emailNotifications } });
+    res.json({
+      user: {
+        id: user.id, name: user.name, email: user.email,
+        studyGoal: user.studyGoal, emailNotifications: user.emailNotifications,
+        reminderPreferences: user.reminderPreferences,
+        isAdmin: checkIsAdmin(user.name)
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -140,6 +163,42 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
     await user.save();
 
     res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAccount = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const { password } = req.body;
+
+    if (typeof password !== 'string') {
+      return res.status(400).json({ message: 'Password is required to delete account' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect password' });
+    }
+
+    await Promise.all([
+      Task.deleteMany({ user: userId }),
+      Subject.deleteMany({ user: userId }),
+      Event.deleteMany({ user: userId }),
+      Note.deleteMany({ user: userId }),
+      Flashcard.deleteMany({ user: userId }),
+      StudySession.deleteMany({ userId }),
+      Achievement.deleteMany({ user: userId }),
+      User.findByIdAndDelete(userId)
+    ]);
+
+    res.json({ message: 'Account deleted successfully' });
   } catch (error) {
     next(error);
   }

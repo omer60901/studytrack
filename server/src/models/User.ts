@@ -13,7 +13,13 @@ const userSchema = new mongoose.Schema(
     totalStudyHours: { type: Number, default: 0 },
     emailNotifications: { type: Boolean, default: true },
     studyGoal: { type: Number, default: 2 },
-    achievedTodayMinutes: { type: Number, default: 0 }
+    achievedTodayMinutes: { type: Number, default: 0 },
+    reminderPreferences: {
+      studyReminder: { type: Boolean, default: true },
+      deadlineReminder: { type: Boolean, default: true },
+      reviewReminder: { type: Boolean, default: true },
+      reminderTime: { type: String, default: '09:00' }
+    }
   },
   { timestamps: true }
 );

@@ -12,6 +12,7 @@ import flashcardRoutes from './routes/flashcards';
 import noteRoutes from './routes/notes';
 import studySessionRoutes from './routes/studySessions';
 import achievementRoutes from './routes/achievements';
+import adminRoutes from './routes/admin';
 import errorHandler from './middleware/errorHandler';
 import { generalLimiter } from './middleware/rateLimiter';
 
@@ -32,6 +33,7 @@ app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/study-sessions', studySessionRoutes);
 app.use('/api/achievements', achievementRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/ping', (req, res) => {
   res.json({ message: 'StudyTrack server is running' });

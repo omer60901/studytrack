@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import Note from '../models/Note';
+import { awardNoteCreatedXp } from '../utils/achievements';
 
 export const getNotes = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -24,6 +26,10 @@ export const createNote = async (req: Request, res: Response, next: NextFunction
     }
     const note = await Note.create({ user: userId, title, content, subject, subjectId });
     res.status(201).json(note);
+
+    try {
+      await awardNoteCreatedXp(new mongoose.Types.ObjectId(userId));
+    } catch { /* silent */ }
   } catch (error) {
     next(error);
   }

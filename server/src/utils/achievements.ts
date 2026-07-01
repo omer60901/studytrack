@@ -23,6 +23,10 @@ const XP_REWARDS = {
   taskCompleted: 10,
   pomodoroCompleted: 5,
   badgeEarned: 25,
+  flashcardCreated: 2,
+  flashcardReviewed: 1,
+  noteCreated: 3,
+  manualSession: 5,
 };
 
 async function awardXp(userId: mongoose.Types.ObjectId, amount: number): Promise<{ xp: number; level: number; leveledUp: boolean }> {
@@ -119,4 +123,24 @@ export async function awardPomodoroCompletedXp(userId: mongoose.Types.ObjectId) 
 
 export async function awardBadgeXp(userId: mongoose.Types.ObjectId) {
   return awardXp(userId, XP_REWARDS.badgeEarned);
+}
+
+export async function awardFlashcardCreatedXp(userId: mongoose.Types.ObjectId) {
+  return awardXp(userId, XP_REWARDS.flashcardCreated);
+}
+
+export async function awardFlashcardReviewedXp(userId: mongoose.Types.ObjectId) {
+  return awardXp(userId, XP_REWARDS.flashcardReviewed);
+}
+
+export async function awardNoteCreatedXp(userId: mongoose.Types.ObjectId) {
+  return awardXp(userId, XP_REWARDS.noteCreated);
+}
+
+export async function awardManualSessionXp(userId: mongoose.Types.ObjectId, durationMinutes: number) {
+  const xp = Math.floor(durationMinutes / 30) * XP_REWARDS.manualSession;
+  if (xp > 0) {
+    return awardXp(userId, xp);
+  }
+  return { xp: 0, level: 1, leveledUp: false };
 }

@@ -2,13 +2,22 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Spinner from '../components/Spinner';
 import PomodoroTimer from '../components/PomodoroTimer';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useLanguage } from '../context/LanguageContext';
 
 interface Summary { totalTasks: number; completedTasks: number; completionRate: number; subjects: number; }
 interface Streak { streak: number; goalToday: number; }
-interface SessionStats { totalMinutes: number; todayMinutes: number; weekMinutes: number; bySubject: Record<string, number>; }
+interface SessionStats {
+  totalMinutes: number;
+  todayMinutes: number;
+  weekMinutes: number;
+  monthMinutes: number;
+  bySubject: Record<string, number>;
+  weekOverWeekChange: number;
+  dailyStats: Record<string, number>;
+}
 interface UserProfile { level: number; xp: number; }
+interface Trend { date: string; minutes: number; }
 
 const COLORS = ['#7c3aed', '#2563eb', '#059669', '#d97706', '#dc2626', '#8b5cf6', '#0891b2'];
 
@@ -19,23 +28,26 @@ const DashboardPage = () => {
   const [sessionStats, setSessionStats] = useState<SessionStats | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [recentTrends, setRecentTrends] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, st, ts, sess, prof] = await Promise.all([
+        const [s, st, ts, sess, prof, trends] = await Promise.all([
           api.get('/analytics/summary'),
           api.get('/analytics/streak'),
           api.get('/tasks?limit=5&sort=dueDate&order=asc'),
           api.get('/study-sessions/stats').catch(() => ({ data: null })),
-          api.get('/auth/profile').catch(() => ({ data: { user: null } }))
+          api.get('/auth/profile').catch(() => ({ data: { user: null } })),
+          api.get('/study-sessions/trends?period=7').catch(() => ({ data: [] }))
         ]);
         setSummary(s.data);
         setStreak(st.data);
         setTasks((ts.data.data || ts.data).slice(0, 5));
         setSessionStats(sess.data);
         setProfile(prof.data.user);
+        setRecentTrends(trends.data);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     };
@@ -68,7 +80,15 @@ const DashboardPage = () => {
           <div className="rounded-3xl bg-slate-950/90 p-5"><p className="text-sm text-slate-400">{t('openTasks')}</p><p className="mt-3 text-3xl font-semibold text-white">{summary?.totalTasks ?? 0}</p></div>
           <div className="rounded-3xl bg-slate-950/90 p-5"><p className="text-sm text-slate-400">{t('completed')}</p><p className="mt-3 text-3xl font-semibold text-white">{summary?.completedTasks ?? 0}</p></div>
           <div className="rounded-3xl bg-slate-950/90 p-5"><p className="text-sm text-slate-400">{t('completionRate')}</p><p className="mt-3 text-3xl font-semibold text-white">{summary ? `${summary.completionRate}%` : '0%'}</p></div>
-          <div className="rounded-3xl bg-slate-950/90 p-5"><p className="text-sm text-slate-400">{t('studyToday')}</p><p className="mt-3 text-3xl font-semibold text-white">{sessionStats?.todayMinutes ?? 0}m</p></div>
+          <div className="rounded-3xl bg-slate-950/90 p-5">
+            <p className="text-sm text-slate-400">{t('studyToday')}</p>
+            <p className="mt-3 text-3xl font-semibold text-white">{sessionStats?.todayMinutes ?? 0}m</p>
+            {sessionStats?.weekOverWeekChange !== undefined && (
+              <p className={`text-xs mt-1 ${sessionStats.weekOverWeekChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {sessionStats.weekOverWeekChange >= 0 ? '↑' : '↓'} {Math.abs(sessionStats.weekOverWeekChange)}% {t('vsLastWeek')}
+              </p>
+            )}
+          </div>
           {profile && (
             <div className="rounded-3xl bg-slate-950/90 p-5">
               <p className="text-sm text-slate-400">{t('level')} {profile.level}</p>
@@ -125,9 +145,55 @@ const DashboardPage = () => {
               <p className="text-sm text-slate-400">{t('allTime')}</p>
               <p className="text-2xl font-bold text-white">{sessionStats?.totalMinutes ?? 0} {t('min')}</p>
             </div>
+            {sessionStats?.monthMinutes !== undefined && (
+              <div className="rounded-2xl bg-slate-950 p-4">
+                <p className="text-sm text-slate-400">{t('thisMonth')}</p>
+                <p className="text-2xl font-bold text-white">{sessionStats.monthMinutes} {t('min')}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {recentTrends.length > 0 && (
+        <div className="card">
+          <h3 className="text-lg font-semibold text-white mb-4">{t('last7Days')}</h3>
+          <ResponsiveContainer width="100%" height={150}>
+            <BarChart data={recentTrends}>
+              <XAxis
+                dataKey="date"
+                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', { weekday: 'short' })}
+              />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px' }}
+                formatter={(value) => [`${value} min`, t('minutes')]}
+              />
+              <Bar dataKey="minutes" radius={[4, 4, 0, 0]}>
+                {recentTrends.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {subjectData.length > 0 && (
+        <div className="card">
+          <h3 className="text-lg font-semibold text-white mb-4">{t('timeBySubject')}</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={subjectData} layout="vertical">
+              <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+              <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} width={100} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px' }}
+                formatter={(value) => [`${value} min`, t('minutes')]}
+              />
+              <Bar dataKey="minutes" fill="#7c3aed" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 };

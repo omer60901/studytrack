@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import type { TranslationKey } from '../context/LanguageContext';
 
@@ -12,6 +13,7 @@ const linkKeys: { to: string; key: TranslationKey }[] = [
   { to: '/flashcards', key: 'flashcards' },
   { to: '/notes', key: 'notes' },
   { to: '/sessions', key: 'sessions' },
+  { to: '/achievements', key: 'achievements' },
   { to: '/settings', key: 'settings' },
 ];
 
@@ -22,6 +24,11 @@ interface SidebarProps {
 
 const Sidebar = ({ open, onClose }: SidebarProps) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  const allLinks = user?.isAdmin
+    ? [...linkKeys, { to: '/admin', key: 'admin' as TranslationKey }]
+    : linkKeys;
 
   return (
     <>
@@ -48,7 +55,7 @@ const Sidebar = ({ open, onClose }: SidebarProps) => {
         </div>
 
         <nav className="space-y-1 overflow-y-auto">
-          {linkKeys.map((link) => (
+          {allLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}

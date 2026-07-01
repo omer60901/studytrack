@@ -1,5 +1,15 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import User from '../models/User';
+
+const syncModelIndexes = async (): Promise<void> => {
+  try {
+    await User.syncIndexes();
+    console.log('User model indexes synced');
+  } catch (err) {
+    console.error('Failed to sync User indexes:', err);
+  }
+};
 
 const connectWithFallback = async (): Promise<boolean> => {
   const localUri = process.env.LOCAL_MONGO || 'mongodb://127.0.0.1:27017/studytrack';
@@ -7,6 +17,7 @@ const connectWithFallback = async (): Promise<boolean> => {
     console.log('Attempting local MongoDB fallback:', localUri);
     await mongoose.connect(localUri, { serverSelectionTimeoutMS: 2000 });
     console.log('Connected to local MongoDB fallback');
+    await syncModelIndexes();
     return true;
   } catch (localErr) {
     console.error('Local MongoDB fallback failed:', localErr);
@@ -18,6 +29,7 @@ const connectWithFallback = async (): Promise<boolean> => {
       const mongod = await MongoMemoryServer.create();
       await mongoose.connect(mongod.getUri('studytrack'));
       console.log('Connected to in-memory MongoDB fallback');
+      await syncModelIndexes();
       return true;
     } catch (memoryErr) {
       console.error('In-memory MongoDB fallback failed:', memoryErr);
@@ -39,6 +51,7 @@ const connectDatabase = async (): Promise<boolean> => {
     // Atlas access is blocked by IP whitelist settings.
     await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
     console.log('Connected to MongoDB');
+    await syncModelIndexes();
     return true;
   } catch (err) {
     console.error('MongoDB connection error:', err);

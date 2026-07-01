@@ -10,6 +10,8 @@ import FlashcardsPage from './pages/FlashcardsPage';
 import NotesPage from './pages/NotesPage';
 import SettingsPage from './pages/SettingsPage';
 import SessionsPage from './pages/SessionsPage';
+import AchievementsPage from './pages/AchievementsPage';
+import AdminPage from './pages/AdminPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MainLayout from './layouts/MainLayout';
@@ -32,7 +34,9 @@ function App() {
             <Route path="flashcards" element={<FlashcardsPage />} />
             <Route path="notes" element={<NotesPage />} />
             <Route path="sessions" element={<SessionsPage />} />
+            <Route path="achievements" element={<AchievementsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="admin" element={<AdminPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
